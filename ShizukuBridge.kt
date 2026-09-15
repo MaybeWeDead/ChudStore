@@ -7,6 +7,7 @@ import org.lsposed.hiddenapibypass.HiddenApiBypass
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
+import java.lang.reflect.Method
 
 object ShizukuBridge {
 
@@ -33,7 +34,6 @@ object ShizukuBridge {
         return try {
             Shizuku.pingBinder()
         } catch (e: Throwable) {
-            Log.e(TAG, "Failed to ping Shizuku", e)
             false
         }
     }
@@ -44,10 +44,8 @@ object ShizukuBridge {
         }
 
         return try {
-            Shizuku.checkSelfPermission() ==
-                PackageManager.PERMISSION_GRANTED
+            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
         } catch (e: Throwable) {
-            Log.e(TAG, "Failed to check Shizuku permission", e)
             false
         }
     }
@@ -79,8 +77,18 @@ object ShizukuBridge {
 
     private fun getSystemServiceBinder(serviceName: String): IBinder {
         val binder = SystemServiceHelper.getSystemService(serviceName)
-
         return ShizukuBinderWrapper(binder)
+    }
+
+    private fun stubAsInterfaceMethod(stubClassName: String): Pair<Class<*>, Method> {
+        val stubClass = Class.forName(stubClassName)
+
+        val method = HiddenApiBypass
+            .getDeclaredMethods(stubClass)
+            .filterIsInstance<Method>()
+            .first { it.name == "asInterface" }
+
+        return stubClass to method
     }
 
     fun getHiddenSystemInterface(
@@ -92,16 +100,9 @@ object ShizukuBridge {
         }
 
         val binder = getSystemServiceBinder(serviceName)
+        val (_, asInterfaceMethod) = stubAsInterfaceMethod(stubClassName)
 
-        val stubClass = Class.forName(stubClassName)
-
-        return HiddenApiBypass.invoke(
-            stubClass,
-            null,
-            "asInterface",
-            binder
-        ) ?: error(
-            "Failed to create AIDL interface for $stubClassName"
-        )
+        return asInterfaceMethod.invoke(null, binder)
+            ?: error("asInterface($stubClassName) returned null")
     }
 }
