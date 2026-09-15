@@ -20,10 +20,10 @@
 // in-memory источник правды), Hilt/Dagger (весь граф зависимостей —
 // три синглтона, ручной DI через object проще и не требует annotation
 // processing, который на слабом железе особенно чувствителен по времени).
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -32,11 +32,7 @@ android {
 
     defaultConfig {
         applicationId = "com.maybewedead.chudstore"
-        minSdk = 26 // Shizuku официально поддерживает 6.0+ (API 23), но
-                    // ShizukuBinderWrapper-based hidden API вызовы стабильны
-                    // от API 26 — см. обсуждение registerUidObserver
-                    // ограничений на API 26 в Shizuku README. Ниже 26 не
-                    // тестировано и не стоит того ради редких устройств.
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0"
@@ -44,10 +40,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false // R8 может агрессивно обрезать reflection-based
-                                     // вызовы к hidden API классам — пока не настроены
-                                     // явные keep-правила под них, minify выключен,
-                                     // чтобы не словить рантайм-краш от лишнего стриппинга
+            isMinifyEnabled = false
         }
     }
 
@@ -62,7 +55,14 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true // нужен для BuildConfig.APPLICATION_ID (см. PackageInstallerService.invokeUninstall) — в AGP 8+ выключен по умолчанию, приходится явно включать
+        buildConfig = true
+    }
+
+    // Kotlin 1.9.24 использует старый способ подключения
+    // Compose Compiler. Новый plugin
+    // org.jetbrains.kotlin.plugin.compose предназначен для Kotlin 2.0+.
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     packaging {
@@ -74,16 +74,18 @@ android {
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
+
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-core") // только core-набор иконок, не extended (extended — это лишние мегабайты редко используемых иконок)
+    implementation("androidx.compose.material:material-icons-core")
+
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.1")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.1") // viewModel() composable + viewModelScope
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.1")
     implementation("androidx.core:core-ktx:1.13.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
@@ -93,5 +95,6 @@ dependencies {
     implementation("dev.rikka.shizuku:provider:13.1.5")
 
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }
