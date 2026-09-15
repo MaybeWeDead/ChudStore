@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Минимальная base theme — почти весь визуальный язык живёт в
+      Compose (Theme.kt), это XML нужен только как точка входа для
+      android:theme в манифесте (Compose Activity всё равно требует
+      валидную Material-совместимую родительскую тему на уровне
+      платформы, до того как Compose успевает отрендериться).
+    -->
+    <style name="Theme.ChudStore" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

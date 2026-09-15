@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      REQUEST_INSTALL_PACKAGES/REQUEST_DELETE_PACKAGES — формально не
+      обязательны для Shizuku-пути (мы устанавливаем через shell UID,
+      у которого своё системное право INSTALL_PACKAGES, не наше
+      приложенческое), но держим их как fallback-путь: если Shizuku
+      сервис недоступен (не установлен/не запущен), можно откатиться на
+      обычный Intent.ACTION_INSTALL_PACKAGE с диалогом подтверждения —
+      хуже, чем "тихо", но лучше, чем "вообще не работает".
+    -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <application
+        android:name=".ChudStoreApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.ChudStore"
+        android:supportsRtl="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.ChudStore">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          ShizukuProvider — регистрирует ContentProvider, через который
+          Shizuku (если установлен как отдельное приложение, а не через
+          Sui/root-режим) обнаруживает нас как валидного клиента и
+          присылает binder при старте. Без этого блока
+          Shizuku.pingBinder()/addBinderReceivedListener() никогда не
+          сработают на чистом Shizuku-backend (Sui-backend в этом не
+          нуждается, но регистрация безвредна и для него).
+        -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
+    </application>
+
+</manifest>
